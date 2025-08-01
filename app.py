@@ -18,6 +18,7 @@ update every second.
 
 import random
 import collections
+import math
 
 import dash
 from dash import dcc, html
@@ -31,14 +32,21 @@ y_data = collections.deque(maxlen=MAX_LENGTH)
 x_data = collections.deque(maxlen=MAX_LENGTH)
 
 
-def update_data(n):
-    """Generate the next data point and append it to the series."""
-    if len(x_data) == 0:
-        x = 0
-        y = random.uniform(0, 10)
+def update_data(n, source='random'):
+    """Generate the next data point and append it to the series based on the selected data source."""
+    # Determine next x value
+    x = 0 if len(x_data) == 0 else x_data[-1] + 1
+    # Generate y based on data source
+    if source == 'sine':
+        # Use a sine wave with gradually increasing x
+        y = 5 * math.sin(x / 5.0) + 5  # shift up to keep values positive
     else:
-        x = x_data[-1] + 1
-        y = y_data[-1] + random.uniform(-1, 1)
+        # Default to random walk
+        if len(y_data) == 0:
+            y = random.uniform(0, 10)
+        else:
+            y = y_data[-1] + random.uniform(-1, 1)
+    # Append values to deques
     x_data.append(x)
     y_data.append(y)
 
@@ -68,25 +76,68 @@ server = app.server  # for deployment on platforms like Heroku
 
 app.layout = html.Div([
     html.H1('Real‑Time Data Visualisation Dashboard', style={'textAlign': 'center', 'color': '#2a4d69'}),
+    # Controls: data source selection and update interval
+    html.Div([
+        html.Label('Data Source:', style={'marginRight': '8px'}),
+        dcc.Dropdown(
+            id='data-source',
+            options=[
+                {'label': 'Random Walk', 'value': 'random'},
+                {'label': 'Sine Wave', 'value': 'sine'},
+            ],
+            value='random',
+            clearable=False,
+            style={'width': '200px', 'display': 'inline-block', 'marginRight': '20px'}
+        ),
+        html.Label('Update Interval (ms):', style={'marginRight': '8px'}),
+        dcc.Slider(
+            id='update-interval',
+            min=500,
+            max=5000,
+            step=500,
+            value=1000,
+            marks={
+                500: {'label': '0.5s'},
+                1000: {'label': '1s'},
+                2000: {'label': '2s'},
+                3000: {'label': '3s'},
+                4000: {'label': '4s'},
+                5000: {'label': '5s'},
+            },
+            tooltip={'placement': 'bottom', 'always_visible': False},
+            style={'width': '300px', 'display': 'inline-block'}
+        ),
+    ], style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center', 'marginBottom': '20px', 'gap': '20px'}),
     dcc.Graph(id='live‑graph', animate=True),
+    # Interval component will be controlled by slider
     dcc.Interval(
         id='interval‑component',
-        interval=1_000,  # update every 1000 ms
+        interval=1000,
         n_intervals=0
     ),
     html.Div([
-        html.P('This graph updates once per second with simulated data. Replace the data generation logic in update_data() with your own data source to visualise real metrics.', style={'textAlign': 'center'})
+        html.P('This graph updates based on your selected interval with simulated data. Replace the data generation logic in update_data() with your own data source to visualise real metrics.', style={'textAlign': 'center'})
     ], style={'maxWidth': '600px', 'margin': '0 auto'})
 ])
 
 
 @app.callback(
-    Output('live‑graph', 'figure'),
-    Input('interval‑component', 'n_intervals')
+    Output('interval‑component', 'interval'),
+    Input('update-interval', 'value')
 )
-def update_graph_live(n):
+def update_interval(interval_value):
+    """Update the interval of the Interval component based on slider."""
+    return interval_value
+
+
+@app.callback(
+    Output('live‑graph', 'figure'),
+    Input('interval‑component', 'n_intervals'),
+    Input('data-source', 'value')
+)
+def update_graph_live(n, source):
     """Callback to update the graph at each interval."""
-    update_data(n)
+    update_data(n, source)
     return create_figure()
 
 

@@ -4,9 +4,13 @@ This project demonstrates how to build a real‑time data visualisation using th
 
 ## Features
 
-- **Live updates**: The chart refreshes every second without reloading the page.
-- **Interactive**: Hover over the line to see exact values; zoom in by dragging.
-- **Customisable**: Replace the random data in `update_data()` with any source.
+This dashboard is designed to be both **interactive** and **customisable**.  A few highlights:
+
+* **Live updates** – The chart refreshes on a timer without reloading the page.
+* **Interactive chart** – Hover over the line to see exact values or zoom in by dragging to explore specific ranges.
+* **Data source selector** – Choose between a **Random Walk** and a **Sine Wave** using the dropdown at the top of the page.
+* **Adjustable update interval** – Use the slider to set the refresh rate between 0.5 and 5 seconds.  Smaller intervals generate more frequent updates.
+* **Customisable data generation** – Replace the logic in `update_data()` with your own API calls or sensor readings to stream live metrics.
 
 ## Getting Started
 
